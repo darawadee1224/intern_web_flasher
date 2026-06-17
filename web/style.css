@@ -185,11 +185,11 @@ body {
   color: white;
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
   opacity: 0.9;
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: scale(0.98);
 }
 
@@ -201,13 +201,22 @@ body {
   background-color: #10b981;
 }
 
-/* สไตล์เพิ่มเติมสําหรับปุ่ม DISCONNECT */
+/* สไตล์เพิ่มเติมสำหรับปุ่ม DISCONNECT */
 .btn-danger {
   background-color: #ef4444;
 }
 
-.btn-danger:hover {
+.btn-danger:hover:not(:disabled) {
   background-color: #dc2626;
+}
+
+/* สไตล์ปุ่มเมื่อโดนล็อกปิดการใช้งาน (Disabled) */
+.btn:disabled {
+  background-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none !important;
 }
 
 /* Progress Bar และสถานะการแฟลช */
@@ -325,6 +334,10 @@ progress::-webkit-progress-value {
 
 /* รองรับการแสดงผลบนหน้าจอขนาดเล็ก */
 @media (max-width: 650px) {
+  .action-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
   .file-row {
     flex-direction: column;
     align-items: stretch;

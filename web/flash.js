@@ -1,13 +1,18 @@
-import * as esptool from "https://unpkg.com/esptool-js/lib/index.js";
+import * as esptool from "https://unpkg.com/esptool-js@0.5.4/bundle.js";
 
 let chip;
 let port;
+let transport;
 
 const logEl = document.getElementById("log");
 const progressBar = document.getElementById("progressBar");
 const progressPercent = document.getElementById("progressPercent");
 const progressStatus = document.getElementById("progressStatus");
+
+// ดึงตัวแปรปุ่มควบคุมพอร์ต
 const connectBtn = document.getElementById("connect");
+const disconnectBtn = document.getElementById("disconnect");
+const flashBtn = document.getElementById("flash");
 
 // ฟังก์ชัน Log ข้อความออกหน้าคอนโซล
 const log = (msg) => {
@@ -15,46 +20,34 @@ const log = (msg) => {
   logEl.scrollTop = logEl.scrollHeight;
 };
 
-// ฟังก์ชันเปิด/ปิดพอร์ต และสลับสถานะปุ่ม UI
-async function toggleConnectESP() {
-  // กรณีที่ 1: มีการเชื่อมต่ออยู่แล้ว -> ทำการ Disconnect
-  if (port && port.readable) {
-    try {
-      log("🔄 กำลังตัดการเชื่อมต่อพอร์ต Serial...");
-      
-      chip = null; 
-      await port.close();
-      port = null;
-
-      log("🔌 ตัดการเชื่อมต่อเรียบร้อยแล้ว");
-      progressStatus.innerText = "Ready to Connect";
-      progressStatus.style.color = "#64748b";
-      
-      // สลับหน้าตาปุ่มกลับเป็นสถานะเริ่มต้น
-      connectBtn.innerText = "CONNECT PORT";
-      connectBtn.className = "btn btn-primary"; 
-    } catch (e) {
-      log(`❌ เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ: ${e.message || e}`);
-    }
-    return;
-  }
-
-  // กรณีที่ 2: ยังไม่ได้เชื่อมต่อ -> ทำการ Connect
+// ฟังก์ชันเชื่อมต่อพอร์ต Serial (ปุ่ม CONNECT PORT)
+async function connectESP() {
   try {
+    log("🔌 กำลังเปิดหน้าต่างเลือกพอร์ต Serial...");
     port = await navigator.serial.requestPort();
 
+    transport = new esptool.Transport(port);
+    
     const baudRate = parseInt(document.getElementById("baudRate").value);
-    await port.open({ baudRate });
 
-    const transport = new esptool.Transport(port, log);
-    chip = new esptool.ESPLoader(transport, false);
+    // 💡 แก้ไขจุดนี้: เพิ่ม clean และ clear เข้าไปใน terminal object เพื่อแก้บั๊กของ v0.5.4
+    chip = new esptool.ESPLoader({
+      transport: transport,
+      baudrate: baudRate,
+      terminal: {
+        write: (msg) => log(msg),
+        clean: () => {}, // สตับฟังก์ชันเปล่าไว้ไม่ให้เกิด Error
+        clear: () => {}  // สตับฟังก์ชันเปล่าไว้เผื่อเรียกใช้
+      }
+    });
 
-    await chip.initialize();
+    log("🔄 กำลังเริ่มต้นเชื่อมต่อกับ Chip (⚡ Connecting...)");
+    await chip.main();
     log("✅ เชื่อมต่อสำเร็จ!");
 
-    // สลับหน้าตาปุ่มเป็น DISCONNECT เมื่อเชื่อมต่อสำเร็จ
-    connectBtn.innerText = "DISCONNECT";
-    connectBtn.className = "btn btn-danger"; 
+    // ปรับปรุงสถานะปุ่มเมื่อเชื่อมต่อติด
+    connectBtn.disabled = true;
+    disconnectBtn.disabled = false;
 
     await readChipInfo();
   } catch (e) {
@@ -66,9 +59,37 @@ async function toggleConnectESP() {
       log(`❌ เกิดข้อผิดพลาด: ${e.message || e}`);
     }
     
-    // คืนค่าปุ่มหากเชื่อมต่อล้มเหลว
-    connectBtn.innerText = "CONNECT PORT";
-    connectBtn.className = "btn btn-primary";
+    // คืนค่าปุ่มหากกระบวนการล้มเหลว
+    connectBtn.disabled = false;
+    disconnectBtn.disabled = true;
+  }
+}
+
+// ฟังก์ชันตัดการเชื่อมต่อพอร์ตฮาร์ดแวร์ (ปุ่ม DISCONNECT)
+async function disconnectESP() {
+  if (port && port.readable) {
+    try {
+      log("🔄 กำลังดำเนินการปิดพอร์ต Serial...");
+      
+      chip = null; 
+      await port.close();
+      port = null;
+      transport = null;
+
+      log("🔌 ตัดการเชื่อมต่อเรียบร้อยแล้ว");
+      progressStatus.innerText = "Ready to Connect";
+      progressStatus.style.color = "#64748b";
+      
+      // คืนค่าปุ่มให้กลับมาพร้อมเริ่มเชื่อมต่อใหม่
+      connectBtn.disabled = false;
+      disconnectBtn.disabled = true;
+      progressBar.value = 0;
+      progressPercent.innerText = "0%";
+    } catch (e) {
+      log(`❌ เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ: ${e.message || e}`);
+    }
+  } else {
+    log("❗ ไม่มีพอร์ตเชื่อมต่อที่ค้างอยู่ในระบบ");
   }
 }
 
@@ -154,6 +175,10 @@ async function flashESP() {
   }
 
   try {
+    // ล็อกปุ่มระหว่างแฟลชเพื่อความปลอดภัยของฮาร์ดแวร์
+    flashBtn.disabled = true;
+    disconnectBtn.disabled = true;
+
     log("⚠️ ลบข้อมูล Flash...");
     progressStatus.innerText = "🧹 กำลังลบข้อมูล Flash (Erase Flash)...";
     progressStatus.style.color = "#eab308";
@@ -167,8 +192,7 @@ async function flashESP() {
       const currentFile = validFiles[i];
       log(`⚡ กำลังแฟลชที่ 0x${currentFile.addr.toString(16)} (${currentFile.data.length} bytes)...`);
       
-      // เรียกใช้ callback เพื่ออัปเดตแบบเรียลไทม์
-      await chip.flashData(currentFile.data, currentFile.addr, (bytesWritten, totalBytes) => {
+      await chip.flashData(currentFile.data, (bytesWritten, totalBytes) => {
         const fileProgress = bytesWritten / totalBytes;
         const totalProgress = ((i + fileProgress) / validFiles.length) * 100;
         
@@ -176,7 +200,7 @@ async function flashESP() {
         progressPercent.innerText = `${Math.round(totalProgress)}%`;
         progressStatus.innerText = `💾 กำลังเขียน (${i + 1}/${validFiles.length}): ${currentFile.name} [${Math.round(fileProgress * 100)}%]`;
         progressStatus.style.color = "#0ea5e9";
-      });
+      }, currentFile.addr);
     }
 
     await chip.hardReset();
@@ -193,6 +217,10 @@ async function flashESP() {
     progressPercent.innerText = "0%";
     progressStatus.innerText = `❌ แฟลชล้มเหลว: ${err}`;
     progressStatus.style.color = "#ef4444";
+  } finally {
+    // คืนค่าปุ่มหลังจบกระบวนการ
+    flashBtn.disabled = false;
+    disconnectBtn.disabled = false;
   }
 }
 
@@ -229,7 +257,8 @@ function clearLogConsole() {
 }
 
 // ผูก Event Listeners เข้ากับปุ่มควบคุมทั้งหมด
-document.getElementById("connect").addEventListener("click", toggleConnectESP);
-document.getElementById("flash").addEventListener("click", flashESP);
+connectBtn.addEventListener("click", connectESP);
+disconnectBtn.addEventListener("click", disconnectESP);
+flashBtn.addEventListener("click", flashESP);
 document.getElementById("downloadLog").addEventListener("click", downloadLogFile);
 document.getElementById("clearLog").addEventListener("click", clearLogConsole);
