@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Header บาร์ด้านบน -->
   <header class="app-header">
     <div class="header-content">
       <h1>ESP32 WEB FLASHER <span class="version">V1.0</span></h1>
@@ -15,10 +16,12 @@
   </header>
 
   <div class="main-container">
+    <!-- Section: เลือกไฟล์ Firmware -->
     <div class="card">
       <h2 class="card-title">SELECT FIRMWARE</h2>
       
       <div class="file-list">
+        <!-- Bootloader -->
         <div class="file-row">
           <div class="file-label-group">
             <span class="icon">⚙️</span>
@@ -31,6 +34,7 @@
           </div>
         </div>
 
+        <!-- Partition Table -->
         <div class="file-row">
           <div class="file-label-group">
             <span class="icon">🗂️</span>
@@ -43,6 +47,7 @@
           </div>
         </div>
 
+        <!-- Application Firmware -->
         <div class="file-row">
           <div class="file-label-group">
             <span class="icon">📄</span>
@@ -57,16 +62,10 @@
       </div>
     </div>
 
+    <!-- Section: การตั้งค่า -->
     <div class="card">
       <h2 class="card-title">CONFIGURATION</h2>
       <div class="config-row">
-        <div class="config-group">
-          <label for="comPort">COM PORT</label>
-          <select id="comPort" class="select-input">
-            <option value="">-- Select Port --</option>
-          </select>
-          <button id="scanPorts" class="btn-scan">SCAN PORTS</button>
-        </div>
         <div class="config-group">
           <label for="baudRate">BAUD RATE</label>
           <select id="baudRate" class="select-input">
@@ -79,11 +78,13 @@
       </div>
     </div>
 
+    <!-- ปุ่มควบคุมการทำงาน -->
     <div class="action-buttons">
       <button id="connect" class="btn btn-primary">CONNECT PORT</button>
       <button id="flash" class="btn btn-success">START FLASH</button>
     </div>
 
+    <!-- Section: Progress -->
     <div class="progress-container">
       <div class="progress-header">
         <span class="progress-title">PROGRESS</span>
@@ -93,6 +94,7 @@
       <div id="progressStatus" class="progress-status">Ready to Flash</div>
     </div>
 
+    <!-- Section: Console Log -->
     <div class="console-container">
       <div class="console-header">
         <span>FLASH CONSOLE</span>

@@ -2,14 +2,12 @@ import * as esptool from "https://unpkg.com/esptool-js/lib/index.js";
 
 let chip;
 let port;
-let availablePorts = [];
 
 const logEl = document.getElementById("log");
 const progressBar = document.getElementById("progressBar");
 const progressPercent = document.getElementById("progressPercent");
 const progressStatus = document.getElementById("progressStatus");
-const comPortSelect = document.getElementById("comPort");
-const scanPortsBtn = document.getElementById("scanPorts");
+const connectBtn = document.getElementById("connect");
 
 // ฟังก์ชัน Log ข้อความออกหน้าคอนโซล
 const log = (msg) => {
@@ -17,55 +15,33 @@ const log = (msg) => {
   logEl.scrollTop = logEl.scrollHeight;
 };
 
-// ฟังก์ชันสแกนพอร์ต Serial ที่มีอยู่
-async function scanSerialPorts() {
-  try {
-    const ports = await navigator.serial.getPorts();
-    availablePorts = ports;
-    comPortSelect.innerHTML = '<option value="">-- Select Port --</option>';
-    
-    if (ports.length === 0) {
-      log("❗ ไม่พบพอร์ต Serial");
-      return;
-    }
-    
-    ports.forEach((p, index) => {
-      const portInfo = p.getInfo ? p.getInfo() : {};
-      const productName = portInfo.usbProductId ? `USB-${portInfo.usbProductId}` : `Port ${index + 1}`;
-      const option = document.createElement("option");
-      option.value = index;
-      option.textContent = `COM${index + 1} - ${productName}`;
-      comPortSelect.appendChild(option);
-    });
-    
-    log(`✅ พบ ${ports.length} พอร์ต Serial`);
-  } catch (err) {
-    log(`❌ ไม่สามารถสแกนพอร์ต: ${err.message}`);
-  }
-}
-
-// ฟังก์ชันเชื่อมต่อ ESP32 ผ่าน Web Serial API
-async function connectESP() {
-  try {
-    const selectedIndex = parseInt(comPortSelect.value);
-    
-    if (isNaN(selectedIndex)) {
-      log("❗ กรุณาเลือกพอร์ต COM ก่อน");
-      return;
-    }
-    
-    port = availablePorts[selectedIndex];
-    
-    if (!port) {
-      log("❗ พอร์ตที่เลือกไม่พบ กรุณาสแกนใหม่");
-      return;
-    }
-
-    if (port && port.readable) {
-      log("🔄 ปิดพอร์ต Serial เดิม...");
+// ฟังก์ชันเปิด/ปิดพอร์ต และสลับสถานะปุ่ม UI
+async function toggleConnectESP() {
+  // กรณีที่ 1: มีการเชื่อมต่ออยู่แล้ว -> ทำการ Disconnect
+  if (port && port.readable) {
+    try {
+      log("🔄 กำลังตัดการเชื่อมต่อพอร์ต Serial...");
+      
+      chip = null; 
       await port.close();
-      log("✅ พอร์ตปิดแล้ว");
+      port = null;
+
+      log("🔌 ตัดการเชื่อมต่อเรียบร้อยแล้ว");
+      progressStatus.innerText = "Ready to Connect";
+      progressStatus.style.color = "#64748b";
+      
+      // สลับหน้าตาปุ่มกลับเป็นสถานะเริ่มต้น
+      connectBtn.innerText = "CONNECT PORT";
+      connectBtn.className = "btn btn-primary"; 
+    } catch (e) {
+      log(`❌ เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ: ${e.message || e}`);
     }
+    return;
+  }
+
+  // กรณีที่ 2: ยังไม่ได้เชื่อมต่อ -> ทำการ Connect
+  try {
+    port = await navigator.serial.requestPort();
 
     const baudRate = parseInt(document.getElementById("baudRate").value);
     await port.open({ baudRate });
@@ -76,13 +52,23 @@ async function connectESP() {
     await chip.initialize();
     log("✅ เชื่อมต่อสำเร็จ!");
 
+    // สลับหน้าตาปุ่มเป็น DISCONNECT เมื่อเชื่อมต่อสำเร็จ
+    connectBtn.innerText = "DISCONNECT";
+    connectBtn.className = "btn btn-danger"; 
+
     await readChipInfo();
   } catch (e) {
-    if (e.name === "InvalidStateError") {
+    if (e.name === "NotFoundError") {
+      log("❗ ยังไม่ได้เลือกพอร์ต Serial กรุณาเลือกอุปกรณ์");
+    } else if (e.name === "InvalidStateError") {
       log("❗ พอร์ต Serial ยังเปิดอยู่ กรุณาปิดก่อนเชื่อมต่อใหม่");
     } else {
       log(`❌ เกิดข้อผิดพลาด: ${e.message || e}`);
     }
+    
+    // คืนค่าปุ่มหากเชื่อมต่อล้มเหลว
+    connectBtn.innerText = "CONNECT PORT";
+    connectBtn.className = "btn btn-primary";
   }
 }
 
@@ -181,15 +167,11 @@ async function flashESP() {
       const currentFile = validFiles[i];
       log(`⚡ กำลังแฟลชที่ 0x${currentFile.addr.toString(16)} (${currentFile.data.length} bytes)...`);
       
-      // เรียกใช้ callback ของ esptool-js เพื่อจับจำนวน bytes ที่เขียนจริงในแต่ละไฟล์
+      // เรียกใช้ callback เพื่ออัปเดตแบบเรียลไทม์
       await chip.flashData(currentFile.data, currentFile.addr, (bytesWritten, totalBytes) => {
-        // คำนวณความคืบหน้าของไฟล์ปัจจุบัน
         const fileProgress = bytesWritten / totalBytes;
-        
-        // คำนวณสัดส่วนเฉลี่ยรวมทุกไฟล์ที่ประมวลผลอยู่
         const totalProgress = ((i + fileProgress) / validFiles.length) * 100;
         
-        // อัปเดตขึ้นสู่หน้าจอ UI 
         progressBar.value = totalProgress;
         progressPercent.innerText = `${Math.round(totalProgress)}%`;
         progressStatus.innerText = `💾 กำลังเขียน (${i + 1}/${validFiles.length}): ${currentFile.name} [${Math.round(fileProgress * 100)}%]`;
@@ -200,7 +182,6 @@ async function flashESP() {
     await chip.hardReset();
     await new Promise((res) => setTimeout(res, 500));
     
-    // สำเร็จเสร็จสิ้น
     log("✅ แฟลช Firmware เสร็จสมบูรณ์!");
     progressBar.value = 100;
     progressPercent.innerText = "100%";
@@ -247,12 +228,8 @@ function clearLogConsole() {
   }
 }
 
-// ผูก Event Listeners เข้ากับปุ่มควบคุม
-document.getElementById("connect").addEventListener("click", connectESP);
+// ผูก Event Listeners เข้ากับปุ่มควบคุมทั้งหมด
+document.getElementById("connect").addEventListener("click", toggleConnectESP);
 document.getElementById("flash").addEventListener("click", flashESP);
 document.getElementById("downloadLog").addEventListener("click", downloadLogFile);
 document.getElementById("clearLog").addEventListener("click", clearLogConsole);
-document.getElementById("scanPorts").addEventListener("click", scanSerialPorts);
-
-// สแกนพอร์ตเมื่อโหลดหน้า
-scanSerialPorts();
