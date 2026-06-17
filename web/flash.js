@@ -2,11 +2,14 @@ import * as esptool from "https://unpkg.com/esptool-js/lib/index.js";
 
 let chip;
 let port;
+let availablePorts = [];
 
 const logEl = document.getElementById("log");
 const progressBar = document.getElementById("progressBar");
 const progressPercent = document.getElementById("progressPercent");
 const progressStatus = document.getElementById("progressStatus");
+const comPortSelect = document.getElementById("comPort");
+const scanPortsBtn = document.getElementById("scanPorts");
 
 // ฟังก์ชัน Log ข้อความออกหน้าคอนโซล
 const log = (msg) => {
@@ -14,16 +17,55 @@ const log = (msg) => {
   logEl.scrollTop = logEl.scrollHeight;
 };
 
+// ฟังก์ชันสแกนพอร์ต Serial ที่มีอยู่
+async function scanSerialPorts() {
+  try {
+    const ports = await navigator.serial.getPorts();
+    availablePorts = ports;
+    comPortSelect.innerHTML = '<option value="">-- Select Port --</option>';
+    
+    if (ports.length === 0) {
+      log("❗ ไม่พบพอร์ต Serial");
+      return;
+    }
+    
+    ports.forEach((p, index) => {
+      const portInfo = p.getInfo ? p.getInfo() : {};
+      const productName = portInfo.usbProductId ? `USB-${portInfo.usbProductId}` : `Port ${index + 1}`;
+      const option = document.createElement("option");
+      option.value = index;
+      option.textContent = `COM${index + 1} - ${productName}`;
+      comPortSelect.appendChild(option);
+    });
+    
+    log(`✅ พบ ${ports.length} พอร์ต Serial`);
+  } catch (err) {
+    log(`❌ ไม่สามารถสแกนพอร์ต: ${err.message}`);
+  }
+}
+
 // ฟังก์ชันเชื่อมต่อ ESP32 ผ่าน Web Serial API
 async function connectESP() {
   try {
+    const selectedIndex = parseInt(comPortSelect.value);
+    
+    if (isNaN(selectedIndex)) {
+      log("❗ กรุณาเลือกพอร์ต COM ก่อน");
+      return;
+    }
+    
+    port = availablePorts[selectedIndex];
+    
+    if (!port) {
+      log("❗ พอร์ตที่เลือกไม่พบ กรุณาสแกนใหม่");
+      return;
+    }
+
     if (port && port.readable) {
       log("🔄 ปิดพอร์ต Serial เดิม...");
       await port.close();
       log("✅ พอร์ตปิดแล้ว");
     }
-
-    port = await navigator.serial.requestPort();
 
     const baudRate = parseInt(document.getElementById("baudRate").value);
     await port.open({ baudRate });
@@ -36,9 +78,7 @@ async function connectESP() {
 
     await readChipInfo();
   } catch (e) {
-    if (e.name === "NotFoundError") {
-      log("❗ ยังไม่ได้เลือกพอร์ต Serial กรุณาเลือกอุปกรณ์");
-    } else if (e.name === "InvalidStateError") {
+    if (e.name === "InvalidStateError") {
       log("❗ พอร์ต Serial ยังเปิดอยู่ กรุณาปิดก่อนเชื่อมต่อใหม่");
     } else {
       log(`❌ เกิดข้อผิดพลาด: ${e.message || e}`);
@@ -212,3 +252,7 @@ document.getElementById("connect").addEventListener("click", connectESP);
 document.getElementById("flash").addEventListener("click", flashESP);
 document.getElementById("downloadLog").addEventListener("click", downloadLogFile);
 document.getElementById("clearLog").addEventListener("click", clearLogConsole);
+document.getElementById("scanPorts").addEventListener("click", scanSerialPorts);
+
+// สแกนพอร์ตเมื่อโหลดหน้า
+scanSerialPorts();
