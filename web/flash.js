@@ -30,14 +30,15 @@ async function connectESP() {
     
     const baudRate = parseInt(document.getElementById("baudRate").value);
 
-    // 💡 แก้ไขจุดนี้: เพิ่ม clean และ clear เข้าไปใน terminal object เพื่อแก้บั๊กของ v0.5.4
+    // สร้าง ESPLoader พร้อมใส่เมธอดของ terminal ครบทุกสเปกเพื่อป้องกัน Error ทั้งหมด
     chip = new esptool.ESPLoader({
       transport: transport,
       baudrate: baudRate,
       terminal: {
         write: (msg) => log(msg),
-        clean: () => {}, // สตับฟังก์ชันเปล่าไว้ไม่ให้เกิด Error
-        clear: () => {}  // สตับฟังก์ชันเปล่าไว้เผื่อเรียกใช้
+        writeLine: (msg) => log(msg), // แก้บั๊ก writeLine is not a function
+        clean: () => {},              // แก้บั๊ก clean is not a function
+        clear: () => {}               // ดักจับฟังก์ชันเคลียร์หน้าจอเผื่อระบบเรียกใช้งาน
       }
     });
 

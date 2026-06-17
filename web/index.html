@@ -1,104 +1,730 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESP32 Web Flasher</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* การตั้งค่าพื้นฐาน */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+      padding-bottom: 2rem;
+    }
+
+    /* Header แถบด้านบนแบบ Deep Navy */
+    .app-header {
+      background-color: #1a2a40;
+      color: #ffffff;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header-content {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-header h1 {
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+
+    .version {
+      font-size: 0.8rem;
+      color: #8fa1b3;
+      margin-left: 0.5rem;
+    }
+
+    .status-badge {
+      font-size: 0.8rem;
+      background: rgba(255,255,255,0.1);
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* คอนเทนเนอร์หลัก */
+    .main-container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* การ์ด (Card) */
+    .card {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #e1e4e8;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1a2a40;
+      margin-bottom: 1.2rem;
+      border-bottom: 2px solid #f0f2f5;
+      padding-bottom: 0.5rem;
+    }
+
+    /* การจัดเรียงไฟล์ในแต่ละแถว */
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8f9fa;
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+      transition: background-color 0.2s;
+    }
+
+    .file-row:hover {
+      background: #f1f3f5;
+    }
+
+    .file-label-group {
+      display: flex;
+      align-items: center;
+      width: 150px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #4a5568;
+    }
+
+    .file-label-group .icon {
+      margin-right: 0.5rem;
+    }
+
+    .file-input {
+      flex: 1;
+      font-size: 0.85rem;
+      padding: 0.3rem;
+      cursor: pointer;
+    }
+
+    .address-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .address-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6c757d;
+    }
+
+    .address-input {
+      width: 90px;
+      padding: 0.4rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: bold;
+      color: #2b6cb0;
+      text-align: center;
+    }
+
+    .address-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    /* ส่วนตั้งค่า Configuration */
+    .config-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 200px;
+    }
+
+    .config-group label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #4a5568;
+    }
+
+    .select-input {
+      padding: 0.5rem;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      background-color: #fff;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    /* ปุ่มกด Control */
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.8rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      color: white;
+    }
+
+    .btn:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: #3b82f6;
+    }
+
+    .btn-success {
+      background-color: #10b981;
+    }
+
+    .btn-danger {
+      background-color: #ef4444;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: #dc2626;
+    }
+
+    .btn:disabled {
+      background-color: #cbd5e1 !important;
+      color: #94a3b8 !important;
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none !important;
+    }
+
+    /* Progress Bar และสถานะการแฟลช */
+    .progress-container {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #e1e4e8;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #1a2a40;
+    }
+
+    .progress-percent {
+      color: #0ea5e9;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    progress {
+      width: 100%;
+      height: 12px;
+      border-radius: 6px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    progress::-webkit-progress-bar {
+      background-color: #e2e8f0;
+      border-radius: 6px;
+    }
+
+    progress::-webkit-progress-value {
+      background-color: #0ea5e9;
+      border-radius: 6px;
+      transition: width 0.1s ease;
+    }
+
+    .progress-status {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+      font-weight: 600;
+    }
+
+    /* Console Log */
+    .console-container {
+      background: #1e293b;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .console-header {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .console-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-console {
+      background: #334155;
+      color: #cbd5e1;
+      border: none;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-console:hover {
+      background: #475569;
+      color: #ffffff;
+    }
+
+    .btn-console:active {
+      transform: scale(0.95);
+    }
+
+    #log {
+      width: 100%;
+      height: 250px;
+      background: transparent;
+      color: #a7f3d0;
+      border: none;
+      padding: 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      resize: none;
+      outline: none;
+      overflow-y: auto;
+    }
+
+    /* รองรับการแสดงผลบนหน้าจอขนาดเล็ก */
+    @media (max-width: 650px) {
+      .action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .file-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.8rem;
+      }
+      .file-label-group {
+        width: 100%;
+      }
+      .address-group {
+        justify-content: space-between;
+      }
+      .address-input {
+        flex: 1;
+        text-align: left;
+      }
+    }
+  </style>
 </head>
 <body>
+
   <header class="app-header">
     <div class="header-content">
-      <h1>ESP32 WEB FLASHER <span class="version">V1.0</span></h1>
-      <div class="status-badge">CARE 69 TEAM</div>
+      <h1>ESP32 WEB TOOLKIT <span class="version">v1.1</span></h1>
+      <div class="status-badge">WebSerial Ready</div>
     </div>
   </header>
 
-  <div class="main-container">
+  <main class="main-container">
+    
     <div class="card">
-      <h2 class="card-title">SELECT FIRMWARE</h2>
-      
-      <div class="file-list">
-        <div class="file-row">
-          <div class="file-label-group">
-            <span class="icon">⚙️</span>
-            <label>Bootloader</label>
-          </div>
-          <input type="file" id="bootloader" accept=".bin" class="file-input" />
-          <div class="address-group">
-            <label>Address:</label>
-            <input type="text" id="bootloaderAddr" value="0x1000" class="address-input" />
-          </div>
-        </div>
-
-        <div class="file-row">
-          <div class="file-label-group">
-            <span class="icon">🗂️</span>
-            <label>Partition Table</label>
-          </div>
-          <input type="file" id="partitions" accept=".bin" class="file-input" />
-          <div class="address-group">
-            <label>Address:</label>
-            <input type="text" id="partitionsAddr" value="0x8000" class="address-input" />
-          </div>
-        </div>
-
-        <div class="file-row">
-          <div class="file-label-group">
-            <span class="icon">📄</span>
-            <label>Application</label>
-          </div>
-          <input type="file" id="firmware" accept=".bin" class="file-input" />
-          <div class="address-group">
-            <label>Address:</label>
-            <input type="text" id="firmwareAddr" value="0x10000" class="address-input" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2 class="card-title">CONFIGURATION</h2>
-      <div class="config-row">
-        <div class="config-group">
-          <label for="baudRate">BAUD RATE</label>
-          <select id="baudRate" class="select-input">
-            <option value="115200">115200</option>
-            <option value="230400">230400</option>
-            <option value="460800" selected>460800</option>
-            <option value="921600">921600</option>
-          </select>
-        </div>
+      <div class="card-title">🔌 HARDWARE CONFIGURATION</div>
+      <div class="config-group">
+        <label for="baudRate">Baud Rate:</label>
+        <select id="baudRate" class="select-input">
+          <option value="115200">115200</option>
+          <option value="230400">230400</option>
+          <option value="460800" selected>460800</option>
+          <option value="921600">921600</option>
+        </select>
       </div>
     </div>
 
     <div class="action-buttons">
-      <button id="connect" class="btn btn-primary">CONNECT PORT</button>
-      <button id="disconnect" class="btn btn-danger" disabled>DISCONNECT</button>
-      <button id="flash" class="btn btn-success">START FLASH</button>
+      <button id="connect" class="btn btn-primary">🔌 CONNECT PORT</button>
+      <button id="disconnect" class="btn btn-danger" disabled>❌ DISCONNECT</button>
+      <button id="flash" class="btn btn-success">⚡ FLASH FIRMWARE</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💾 FIRMWARE FILES (.BIN)</div>
+      <div class="file-list">
+        
+        <div class="file-row">
+          <div class="file-label-group">
+            <span class="icon">📦</span> Bootloader
+          </div>
+          <input type="file" id="bootloader" class="file-input" accept=".bin">
+          <div class="address-group">
+            <label>Address:</label>
+            <input type="text" id="bootloaderAddr" class="address-input" value="0x0000">
+          </div>
+        </div>
+
+        <div class="file-row">
+          <div class="file-label-group">
+            <span class="icon">📊</span> Partitions
+          </div>
+          <input type="file" id="partitions" class="file-input" accept=".bin">
+          <div class="address-group">
+            <label>Address:</label>
+            <input type="text" id="partitionsAddr" class="address-input" value="0x8000">
+          </div>
+        </div>
+
+        <div class="file-row">
+          <div class="file-label-group">
+            <span class="icon">⚙️</span> Firmware
+          </div>
+          <input type="file" id="firmware" class="file-input" accept=".bin">
+          <div class="address-group">
+            <label>Address:</label>
+            <input type="text" id="firmwareAddr" class="address-input" value="0x10000">
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <div class="progress-container">
       <div class="progress-header">
-        <span class="progress-title">PROGRESS</span>
+        <span>FLASHING STATUS</span>
         <span id="progressPercent" class="progress-percent">0%</span>
       </div>
       <progress id="progressBar" value="0" max="100"></progress>
-      <div id="progressStatus" class="progress-status">Ready to Flash</div>
+      <div id="progressStatus" class="progress-status">Ready to Connect</div>
     </div>
 
     <div class="console-container">
       <div class="console-header">
-        <span>FLASH CONSOLE</span>
+        <span>💻 SYSTEM LOG CONSOLE</span>
         <div class="console-actions">
-          <button id="clearLog" class="btn-console">CLEAR LOG</button>
-          <button id="downloadLog" class="btn-console">DOWNLOAD LOG</button>
+          <button id="downloadLog" class="btn-console">📥 DOWNLOAD LOG</button>
+          <button id="clearLog" class="btn-console">🧹 CLEAR</button>
         </div>
       </div>
-      <textarea id="log" readonly placeholder="สถานะการทำงานจะแสดงที่นี่..."></textarea>
+      <textarea id="log" readonly placeholder="ระบบกำลังเตรียมพร้อม... รอการเชื่อมต่ออุปกรณ์ Hardware"></textarea>
     </div>
-  </div>
 
-  <script type="module" src="flash.js"></script>
+  </main>
+
+  <script type="module">
+    import * as esptool from "https://unpkg.com/esptool-js@0.5.4/bundle.js";
+
+    let chip;
+    let port;
+    let transport;
+
+    const logEl = document.getElementById("log");
+    const progressBar = document.getElementById("progressBar");
+    const progressPercent = document.getElementById("progressPercent");
+    const progressStatus = document.getElementById("progressStatus");
+
+    const connectBtn = document.getElementById("connect");
+    const disconnectBtn = document.getElementById("disconnect");
+    const flashBtn = document.getElementById("flash");
+
+    // ฟังก์ชัน Log ข้อความออกหน้าคอนโซล
+    const log = (msg) => {
+      logEl.value += msg + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+
+    // ฟังก์ชันเชื่อมต่อพอร์ต Serial (ปุ่ม CONNECT PORT)
+    async function connectESP() {
+      try {
+        log("🔌 กำลังเปิดหน้าต่างเลือกพอร์ต Serial...");
+        port = await navigator.serial.requestPort();
+
+        transport = new esptool.Transport(port);
+        
+        const baudRate = parseInt(document.getElementById("baudRate").value);
+
+        // สร้าง ESPLoader พร้อมดักฟังก์ชันของ Terminal ทั้งหมด
+        chip = new esptool.ESPLoader({
+          transport: transport,
+          baudrate: baudRate,
+          terminal: {
+            write: (msg) => log(msg),
+            writeLine: (msg) => log(msg), 
+            clean: () => {},              
+            clear: () => {}               
+          }
+        });
+
+        log("🔄 กำลังเริ่มต้นเชื่อมต่อกับ Chip (⚡ Connecting...)");
+        await chip.main();
+        log("✅ เชื่อมต่อสำเร็จ!");
+
+        // สลับสถานะปุ่ม
+        connectBtn.disabled = true;
+        disconnectBtn.disabled = false;
+
+        await readChipInfo();
+      } catch (e) {
+        if (e.name === "NotFoundError") {
+          log("❗ ยังไม่ได้เลือกพอร์ต Serial กรุณาเลือกอุปกรณ์");
+        } else if (e.name === "InvalidStateError") {
+          log("❗ พอร์ต Serial ยังเปิดอยู่ กรุณาปิดก่อนเชื่อมต่อใหม่");
+        } else {
+          log(`❌ เกิดข้อผิดพลาด: ${e.message || e}`);
+        }
+        
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+      }
+    }
+
+    // ฟังก์ชันตัดการเชื่อมต่อพอร์ตฮาร์ดแวร์ (ปรับปรุงระบบเพื่อไม่ให้ติดล็อก Stream)
+    async function disconnectESP() {
+      try {
+        log("🔄 กำลังดำเนินการปิดพอร์ต Serial...");
+
+        // 1. สั่งให้ transport ของ esptool ทำการปลดล็อกและปิดการเชื่อมต่อภายในก่อน
+        if (transport && typeof transport.disconnect === "function") {
+          await transport.disconnect();
+        }
+
+        // 2. ปิดพอร์ตหลักของเบราว์เซอร์อย่างปลอดภัย
+        if (port) {
+          if (port.readable) {
+            await port.close();
+          }
+          port = null;
+        }
+
+        // 3. เคลียร์ตัวแปรทิ้งเพื่อคืนหน่วยความจำ
+        chip = null;
+        transport = null;
+
+        log("🔌 ตัดการเชื่อมต่อเรียบร้อยแล้ว");
+        progressStatus.innerText = "Ready to Connect";
+        progressStatus.style.color = "#64748b";
+        
+        // คืนค่าสถานะปุ่มต่างๆ
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+        progressBar.value = 0;
+        progressPercent.innerText = "0%";
+      } catch (e) {
+        log(`❌ เกิดข้อผิดพลาดขณะตัดการเชื่อมต่อ: ${e.message || e}`);
+        
+        // เผื่อกรณีฉุกเฉิน บังคับเคลียร์ตัวแปรเพื่อให้ระบบกลับมารันใหม่ได้โดยไม่ต้องรีเฟรชหน้าเว็บ
+        chip = null;
+        transport = null;
+        port = null;
+        connectBtn.disabled = false;
+        disconnectBtn.disabled = true;
+      }
+    }
+
+    // ฟังก์ชันอ่านข้อมูล Chip ล่าสุดมาแสดงผล
+    async function readChipInfo() {
+      if (!chip) {
+        log("❗ ไม่พบอุปกรณ์ที่เชื่อมต่อ");
+        return;
+      }
+
+      try {
+        const chipName = chip.chipName || "ESP32 Device";
+
+        log("=== ข้อมูล Chip ล่าสุด ===");
+        log(`Name        : ${chipName}`);
+
+        if (typeof chip.readMac === "function") {
+          const mac = await chip.readMac();
+          const macStr = Array.from(mac)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join(":");
+          log(`MAC Address : ${macStr}`);
+        }
+
+        log("=========================");
+        progressStatus.innerText = `Connected to ${chipName}`;
+        progressStatus.style.color = "#3b82f6";
+      } catch (err) {
+        log(`❌ อ่านข้อมูล Chip ล้มเหลว: ${err}`);
+      }
+    }
+
+    // ฟังก์ชันหลักในการแฟลชไฟล์ .bin พร้อมคำนวณ Progress แบบเรียลไทม์
+    async function flashESP() {
+      if (!chip) {
+        log("❗ กรุณาเชื่อมต่อก่อนแฟลช");
+        return;
+      }
+
+      const files = [
+        {
+          input: document.getElementById("bootloader"),
+          addr: document.getElementById("bootloaderAddr").value.trim(),
+          name: "bootloader.bin"
+        },
+        {
+          input: document.getElementById("partitions"),
+          addr: document.getElementById("partitionsAddr").value.trim(),
+          name: "partitions.bin"
+        },
+        {
+          input: document.getElementById("firmware"),
+          addr: document.getElementById("firmwareAddr").value.trim(),
+          name: "firmware.bin"
+        },
+      ];
+
+      const validFiles = [];
+
+      for (const file of files) {
+        if (file.input.files.length && file.addr.startsWith("0x")) {
+          const addrInt = parseInt(file.addr, 16);
+          if (isNaN(addrInt)) {
+            log(`❌ Address ไม่ถูกต้อง: ${file.addr}`);
+            continue;
+          }
+          const binData = await file.input.files[0].arrayBuffer();
+          validFiles.push({
+            addr: addrInt,
+            data: new Uint8Array(binData),
+            name: file.name
+          });
+        }
+      }
+
+      if (!validFiles.length) {
+        log("❗ ไม่มีไฟล์ที่ถูกต้องสำหรับแฟลช");
+        progressStatus.innerText = "❗ ไม่มีไฟล์ที่ถูกต้องสำหรับแฟลช";
+        progressStatus.style.color = "#ef4444";
+        return;
+      }
+
+      try {
+        flashBtn.disabled = true;
+        disconnectBtn.disabled = true;
+
+        log("⚠️ ลบข้อมูล Flash...");
+        progressStatus.innerText = "🧹 กำลังลบข้อมูล Flash (Erase Flash)...";
+        progressStatus.style.color = "#eab308";
+        await chip.eraseFlash();
+
+        progressBar.value = 0;
+        progressPercent.innerText = "0%";
+
+        for (let i = 0; i < validFiles.length; i++) {
+          const currentFile = validFiles[i];
+          log(`⚡ กำลังแฟลชที่ 0x${currentFile.addr.toString(16)} (${currentFile.data.length} bytes)...`);
+          
+          await chip.flashData(currentFile.data, (bytesWritten, totalBytes) => {
+            const fileProgress = bytesWritten / totalBytes;
+            const totalProgress = ((i + fileProgress) / validFiles.length) * 100;
+            
+            progressBar.value = totalProgress;
+            progressPercent.innerText = `${Math.round(totalProgress)}%`;
+            progressStatus.innerText = `💾 กำลังเขียน (${i + 1}/${validFiles.length}): ${currentFile.name} [${Math.round(fileProgress * 100)}%]`;
+            progressStatus.style.color = "#0ea5e9";
+          }, currentFile.addr);
+        }
+
+        await chip.hardReset();
+        await new Promise((res) => setTimeout(res, 500));
+        
+        log("✅ แฟลช Firmware เสร็จสมบูรณ์!");
+        progressBar.value = 100;
+        progressPercent.innerText = "100%";
+        progressStatus.innerText = "✨ แฟลชเฟิร์มแวร์ลงบอร์ด ESP32 สำเร็จเรียบร้อย!";
+        progressStatus.style.color = "#10b981";
+      } catch (err) {
+        log(`❌ แฟลชล้มเหลว: ${err}`);
+        progressBar.value = 0;
+        progressPercent.innerText = "0%";
+        progressStatus.innerText = `❌ แฟลชล้มเหลว: ${err}`;
+        progressStatus.style.color = "#ef4444";
+      } finally {
+        flashBtn.disabled = false;
+        disconnectBtn.disabled = false;
+      }
+    }
+
+    // ฟังก์ชันดาวน์โหลด Log (.txt)
+    function downloadLogFile() {
+      const logText = logEl.value;
+      if (!logText.trim()) {
+        alert("❗ ไม่มีข้อมูล Log ให้ดาวน์โหลด");
+        return;
+      }
+
+      const blob = new Blob([logText], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      link.href = url;
+      link.download = `esp32_flash_log_${timestamp}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // ฟังก์ชันล้างค่า Console
+    function clearLogConsole() {
+      if (confirm("คุณต้องการล้างข้อความ Log ทั้งหมดใช่หรือไม่?")) {
+        logEl.value = "";
+      }
+    }
+
+    // ผูก Event listeners ทั้งหมด
+    connectBtn.addEventListener("click", connectESP);
+    disconnectBtn.addEventListener("click", disconnectESP);
+    flashBtn.addEventListener("click", flashESP);
+    document.getElementById("downloadLog").addEventListener("click", downloadLogFile);
+    document.getElementById("clearLog").addEventListener("click", clearLogConsole);
+  </script>
 </body>
 </html>

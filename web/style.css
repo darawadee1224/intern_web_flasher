@@ -201,7 +201,6 @@ body {
   background-color: #10b981;
 }
 
-/* สไตล์เพิ่มเติมสำหรับปุ่ม DISCONNECT */
 .btn-danger {
   background-color: #ef4444;
 }
@@ -210,7 +209,6 @@ body {
   background-color: #dc2626;
 }
 
-/* สไตล์ปุ่มเมื่อโดนล็อกปิดการใช้งาน (Disabled) */
 .btn:disabled {
   background-color: #cbd5e1 !important;
   color: #94a3b8 !important;
