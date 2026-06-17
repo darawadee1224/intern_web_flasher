@@ -5,13 +5,16 @@ let port;
 
 const logEl = document.getElementById("log");
 const progressBar = document.getElementById("progressBar");
+const progressPercent = document.getElementById("progressPercent");
+const progressStatus = document.getElementById("progressStatus");
 
+// ฟังก์ชัน Log ข้อความออกหน้าคอนโซล
 const log = (msg) => {
   logEl.value += msg + "\n";
   logEl.scrollTop = logEl.scrollHeight;
 };
 
-// เชื่อมต่อ ESP32
+// ฟังก์ชันเชื่อมต่อ ESP32 ผ่าน Web Serial API
 async function connectESP() {
   try {
     if (port && port.readable) {
@@ -43,7 +46,7 @@ async function connectESP() {
   }
 }
 
-// อ่านข้อมูล Chip
+// ฟังก์ชันอ่านข้อมูล Chip ล่าสุดมาแสดงผล
 async function readChipInfo() {
   if (!chip) {
     log("❗ ไม่พบอุปกรณ์ที่เชื่อมต่อ");
@@ -58,7 +61,6 @@ async function readChipInfo() {
     log(`Name        : ${chipName || "Unknown"}`);
     log(`Flash Size  : ${flashSize || "Unknown"} bytes`);
 
-    // อ่าน MAC Address ถ้าไลบรารีรองรับ
     if (typeof chip.readMac === "function") {
       const mac = await chip.readMac();
       const macStr = Array.from(mac)
@@ -68,12 +70,14 @@ async function readChipInfo() {
     }
 
     log("=========================");
+    progressStatus.innerText = `Connected to ${chipName || "ESP32 Device"}`;
+    progressStatus.style.color = "#3b82f6";
   } catch (err) {
     log(`❌ อ่านข้อมูล Chip ล้มเหลว: ${err}`);
   }
 }
 
-// แฟลชไฟล์
+// ฟังก์ชันหลักในการแฟลชไฟล์ .bin พร้อมคำนวณ Progress แบบเรียลไทม์
 async function flashESP() {
   if (!chip) {
     log("❗ กรุณาเชื่อมต่อก่อนแฟลช");
@@ -84,14 +88,17 @@ async function flashESP() {
     {
       input: document.getElementById("bootloader"),
       addr: document.getElementById("bootloaderAddr").value.trim(),
+      name: "bootloader.bin"
     },
     {
       input: document.getElementById("partitions"),
       addr: document.getElementById("partitionsAddr").value.trim(),
+      name: "partitions.bin"
     },
     {
       input: document.getElementById("firmware"),
       addr: document.getElementById("firmwareAddr").value.trim(),
+      name: "firmware.bin"
     },
   ];
 
@@ -105,37 +112,69 @@ async function flashESP() {
         continue;
       }
       const binData = await file.input.files[0].arrayBuffer();
-      validFiles.push([addrInt, new Uint8Array(binData)]);
+      validFiles.push({
+        addr: addrInt,
+        data: new Uint8Array(binData),
+        name: file.name
+      });
     }
   }
 
   if (!validFiles.length) {
     log("❗ ไม่มีไฟล์ที่ถูกต้องสำหรับแฟลช");
+    progressStatus.innerText = "❗ ไม่มีไฟล์ที่ถูกต้องสำหรับแฟลช";
+    progressStatus.style.color = "#ef4444";
     return;
   }
 
   try {
     log("⚠️ ลบข้อมูล Flash...");
+    progressStatus.innerText = "🧹 กำลังลบข้อมูล Flash (Erase Flash)...";
+    progressStatus.style.color = "#eab308";
     await chip.eraseFlash();
 
+    // เริ่มต้นสถานะ Progress Bar
     progressBar.value = 0;
+    progressPercent.innerText = "0%";
+
     for (let i = 0; i < validFiles.length; i++) {
-      const [addr, data] = validFiles[i];
-      log(`⚡ กำลังแฟลชที่ 0x${addr.toString(16)} (${data.length} bytes)...`);
-      await chip.flashData(data, addr);
-      progressBar.value = ((i + 1) / validFiles.length) * 100;
+      const currentFile = validFiles[i];
+      log(`⚡ กำลังแฟลชที่ 0x${currentFile.addr.toString(16)} (${currentFile.data.length} bytes)...`);
+      
+      // เรียกใช้ callback ของ esptool-js เพื่อจับจำนวน bytes ที่เขียนจริงในแต่ละไฟล์
+      await chip.flashData(currentFile.data, currentFile.addr, (bytesWritten, totalBytes) => {
+        // คำนวณความคืบหน้าของไฟล์ปัจจุบัน
+        const fileProgress = bytesWritten / totalBytes;
+        
+        // คำนวณสัดส่วนเฉลี่ยรวมทุกไฟล์ที่ประมวลผลอยู่
+        const totalProgress = ((i + fileProgress) / validFiles.length) * 100;
+        
+        // อัปเดตขึ้นสู่หน้าจอ UI 
+        progressBar.value = totalProgress;
+        progressPercent.innerText = `${Math.round(totalProgress)}%`;
+        progressStatus.innerText = `💾 กำลังเขียน (${i + 1}/${validFiles.length}): ${currentFile.name} [${Math.round(fileProgress * 100)}%]`;
+        progressStatus.style.color = "#0ea5e9";
+      });
     }
 
     await chip.hardReset();
     await new Promise((res) => setTimeout(res, 500));
+    
+    // สำเร็จเสร็จสิ้น
     log("✅ แฟลช Firmware เสร็จสมบูรณ์!");
     progressBar.value = 100;
+    progressPercent.innerText = "100%";
+    progressStatus.innerText = "✨ แฟลชเฟิร์มแวร์ลงบอร์ด ESP32 สำเร็จเรียบร้อย!";
+    progressStatus.style.color = "#10b981";
   } catch (err) {
     log(`❌ แฟลชล้มเหลว: ${err}`);
     progressBar.value = 0;
+    progressPercent.innerText = "0%";
+    progressStatus.innerText = `❌ แฟลชล้มเหลว: ${err}`;
+    progressStatus.style.color = "#ef4444";
   }
 }
 
-// Event listeners
+// ผูก Event Listeners เข้ากับปุ่มควบคุม
 document.getElementById("connect").addEventListener("click", connectESP);
 document.getElementById("flash").addEventListener("click", flashESP);

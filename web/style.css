@@ -9,6 +9,7 @@ body {
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
   background-color: #f4f6f9;
   color: #333;
+  padding-bottom: 2rem;
 }
 
 /* Header แถบด้านบนแบบ Deep Navy */
@@ -87,6 +88,11 @@ body {
   padding: 0.8rem 1rem;
   border-radius: 6px;
   border: 1px solid #e9ecef;
+  transition: background-color 0.2s;
+}
+
+.file-row:hover {
+  background: #f1f3f5;
 }
 
 .file-label-group {
@@ -95,6 +101,7 @@ body {
   width: 150px;
   font-weight: 600;
   font-size: 0.9rem;
+  color: #4a5568;
 }
 
 .file-label-group .icon {
@@ -105,6 +112,7 @@ body {
   flex: 1;
   font-size: 0.85rem;
   padding: 0.3rem;
+  cursor: pointer;
 }
 
 .address-group {
@@ -126,10 +134,16 @@ body {
   border-radius: 4px;
   font-family: monospace;
   font-weight: bold;
+  color: #2b6cb0;
   text-align: center;
 }
 
-/* ส่วนตั้งค่า Baud Rate */
+.address-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* ส่วนตั้งค่า Configuration */
 .config-group {
   display: flex;
   flex-direction: column;
@@ -140,6 +154,7 @@ body {
 .config-group label {
   font-size: 0.85rem;
   font-weight: 700;
+  color: #4a5568;
 }
 
 .select-input {
@@ -148,9 +163,10 @@ body {
   border-radius: 4px;
   background-color: #fff;
   font-size: 0.95rem;
+  cursor: pointer;
 }
 
-/* ปุ่มกด */
+/* ปุ่มกด Control */
 .action-buttons {
   display: flex;
   gap: 1rem;
@@ -165,7 +181,7 @@ body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.1s;
   color: white;
 }
 
@@ -173,23 +189,42 @@ body {
   opacity: 0.9;
 }
 
+.btn:active {
+  transform: scale(0.98);
+}
+
 .btn-primary {
-  background-color: #3b82f6; /* สีฟ้า */
+  background-color: #3b82f6;
 }
 
 .btn-success {
-  background-color: #10b981; /* สีเขียวมิ้นต์ */
+  background-color: #10b981;
 }
 
-/* Progress Bar */
+/* Progress Bar และสถานะการแฟลช */
 .progress-container {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1.2rem;
   margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  border: 1px solid #e1e4e8;
 }
 
 .progress-header {
-  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
   font-size: 0.85rem;
   font-weight: bold;
+  color: #1a2a40;
+}
+
+.progress-percent {
+  color: #0ea5e9;
+  font-weight: 700;
+  font-size: 1rem;
 }
 
 progress {
@@ -208,6 +243,14 @@ progress::-webkit-progress-bar {
 progress::-webkit-progress-value {
   background-color: #0ea5e9;
   border-radius: 6px;
+  transition: width 0.1s ease;
+}
+
+.progress-status {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+  font-weight: 600;
 }
 
 /* Console Log */
@@ -215,25 +258,48 @@ progress::-webkit-progress-value {
   background: #1e293b;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .console-header {
   background: #0f172a;
   color: #94a3b8;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
   font-size: 0.8rem;
   font-weight: bold;
+  letter-spacing: 0.5px;
 }
 
 #log {
   width: 100%;
-  height: 200px;
+  height: 250px;
   background: transparent;
-  color: #a7f3d0; /* สีเขียว Terminal */
+  color: #a7f3d0;
   border: none;
   padding: 1rem;
   font-family: 'Courier New', monospace;
   font-size: 0.85rem;
-  resize: vertical;
+  line-height: 1.4;
+  resize: none;
   outline: none;
+  overflow-y: auto;
+}
+
+/* รองรับการแสดงผลบนหน้าจอขนาดเล็ก */
+@media (max-width: 650px) {
+  .file-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+  .file-label-group {
+    width: 100%;
+  }
+  .address-group {
+    justify-content: flex-between;
+  }
+  .address-input {
+    flex: 1;
+    text-align: left;
+  }
 }

@@ -88,14 +88,16 @@
     <div class="progress-container">
       <div class="progress-header">
         <span class="progress-title">PROGRESS</span>
+        <span id="progressPercent" class="progress-percent">0%</span>
       </div>
       <progress id="progressBar" value="0" max="100"></progress>
+      <div id="progressStatus" class="progress-status">Ready to Flash</div>
     </div>
 
     <!-- Section: Console Log -->
     <div class="console-container">
       <div class="console-header">FLASH CONSOLE</div>
-      <textarea id="log" readonly></textarea>
+      <textarea id="log" readonly placeholder="สถานะการทำงานจะแสดงที่นี่..."></textarea>
     </div>
   </div>
 
