@@ -175,6 +175,40 @@ async function flashESP() {
   }
 }
 
+// ฟังก์ชันดาวน์โหลด Log ออกมาเป็นไฟล์ .txt
+function downloadLogFile() {
+  const logText = logEl.value;
+  
+  if (!logText.trim()) {
+    alert("❗ ไม่มีข้อมูล Log ให้ดาวน์โหลด");
+    return;
+  }
+
+  const blob = new Blob([logText], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  
+  const now = new Date();
+  const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+  
+  link.href = url;
+  link.download = `esp32_flash_log_${timestamp}.txt`;
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// ฟังก์ชันล้างข้อความใน Console
+function clearLogConsole() {
+  if (confirm("คุณต้องการล้างข้อความ Log ทั้งหมดใช่หรือไม่?")) {
+    logEl.value = "";
+  }
+}
+
 // ผูก Event Listeners เข้ากับปุ่มควบคุม
 document.getElementById("connect").addEventListener("click", connectESP);
 document.getElementById("flash").addEventListener("click", flashESP);
+document.getElementById("downloadLog").addEventListener("click", downloadLogFile);
+document.getElementById("clearLog").addEventListener("click", clearLogConsole);
