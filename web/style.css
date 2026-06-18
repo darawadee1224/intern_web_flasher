@@ -1,4 +1,4 @@
-/* การตั้งค่าพื้นฐาน */
+/* web/style.css */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -12,7 +12,6 @@ body {
   padding-bottom: 2rem;
 }
 
-/* Header แถบด้านบนแบบ Deep Navy */
 .app-header {
   background-color: #1a2a40;
   color: #ffffff;
@@ -47,14 +46,12 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* คอนเทนเนอร์หลัก */
 .main-container {
   max-width: 900px;
   margin: 2rem auto;
   padding: 0 1rem;
 }
 
-/* การ์ด (Card) */
 .card {
   background: #ffffff;
   border-radius: 8px;
@@ -73,7 +70,6 @@ body {
   padding-bottom: 0.5rem;
 }
 
-/* การจัดเรียงไฟล์ในแต่ละแถว */
 .file-list {
   display: flex;
   flex-direction: column;
@@ -143,7 +139,6 @@ body {
   border-color: #3b82f6;
 }
 
-/* ส่วนตั้งค่า Configuration */
 .config-group {
   display: flex;
   flex-direction: column;
@@ -166,7 +161,6 @@ body {
   cursor: pointer;
 }
 
-/* ปุ่มกด Control */
 .action-buttons {
   display: flex;
   gap: 1rem;
@@ -193,21 +187,9 @@ body {
   transform: scale(0.98);
 }
 
-.btn-primary {
-  background-color: #3b82f6;
-}
-
-.btn-success {
-  background-color: #10b981;
-}
-
-.btn-danger {
-  background-color: #ef4444;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: #dc2626;
-}
+.btn-primary { background-color: #3b82f6; }
+.btn-success { background-color: #10b981; }
+.btn-danger { background-color: #ef4444; }
 
 .btn:disabled {
   background-color: #cbd5e1 !important;
@@ -217,7 +199,6 @@ body {
   transform: none !important;
 }
 
-/* Progress Bar และสถานะการแฟลช */
 .progress-container {
   background: #ffffff;
   border-radius: 8px;
@@ -269,7 +250,6 @@ progress::-webkit-progress-value {
   font-weight: 600;
 }
 
-/* Console Log */
 .console-container {
   background: #1e293b;
   border-radius: 8px;
@@ -311,10 +291,6 @@ progress::-webkit-progress-value {
   color: #ffffff;
 }
 
-.btn-console:active {
-  transform: scale(0.95);
-}
-
 #log {
   width: 100%;
   height: 250px;
@@ -330,25 +306,10 @@ progress::-webkit-progress-value {
   overflow-y: auto;
 }
 
-/* รองรับการแสดงผลบนหน้าจอขนาดเล็ก */
 @media (max-width: 650px) {
-  .action-buttons {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .file-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.8rem;
-  }
-  .file-label-group {
-    width: 100%;
-  }
-  .address-group {
-    justify-content: flex-between;
-  }
-  .address-input {
-    flex: 1;
-    text-align: left;
-  }
+  .action-buttons { flex-direction: column; gap: 0.5rem; }
+  .file-row { align-items: stretch; flex-direction: column; gap: 0.8rem; }
+  .file-label-group { width: 100%; }
+  .address-group { justify-content: space-between; }
+  .address-input { flex: 1; text-align: left; }
 }
