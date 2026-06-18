@@ -2,16 +2,18 @@
 
 ## TODO
 
-- [ ] ปรับปรุงหน้า Upload Firmware
-- [ ] เพิ่ม Progress Bar
-- [ ] เพิ่ม Download Log
-- [ ] ปรับปรุง README
-- [ ] เพิ่ม Error Handling
+- [✅] ปรับปรุงหน้า Upload Firmware
+- [✅] เพิ่ม Progress Bar
+- [✅] เพิ่ม Download Log
+- [✅] ปรับปรุง README
+- [✅] เพิ่ม Error Handling
 
 ## ผู้รับผิดชอบ
 
 | งาน | ผู้รับผิดชอบ | สถานะ |
 |------|-------------|---------|
-| Upload Firmware | A | DONE |
-| Progress Bar | B | REVIEW |
-| Download Log | C | TODO |
+| ปรับปรุงหน้า Upload Firmware | Moss | DONE |
+| เพิ่ม Progress Bar | Da | DONE |
+| เพิ่ม Download Log | Tawan | DONE |
+| ปรับปรุง README | Aslan | DONE |
+| เพิ่ม Error Handling | Q | DONE |
